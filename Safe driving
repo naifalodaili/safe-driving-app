@@ -3,33 +3,40 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 
-# 1. إنشاء ملف إكسل جديد
+# 1. Initialize Workbook and Sheet
 wb = openpyxl.Workbook()
 ws = wb.active
 ws.title = "Tree Savings Calculator"
 ws.views.sheetView[0].showGridLines = True
 
-# 2. التنسيقات والأنماط (Styles)
-font_title = Font(name="Calibri", size=16, bold=True, color="006100")
-font_section = Font(name="Calibri", size=12, bold=True, color="000000")
-font_bold = Font(name="Calibri", size=11, bold=True)
-font_tree_kpi = Font(name="Calibri", size=13, bold=True, color="004D40")
+# 2. Styling Palette
+NAVY_HEADER = "1F4E5B"
+LIGHT_GREEN_BG = "E8F5E9"
+INPUT_YELLOW = "FFF9C4"
+BORDER_COLOR = "D0D7DE"
 
-fill_input = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid") # أصفر فاتح للمدخلات
-fill_tree = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # أخضر فاتح لمؤشر الأشجار
+font_title = Font(name="Calibri", size=16, bold=True, color="FFFFFF")
+font_section = Font(name="Calibri", size=12, bold=True, color=NAVY_HEADER)
+font_bold = Font(name="Calibri", size=11, bold=True, color="333333")
+font_tree_kpi = Font(name="Calibri", size=13, bold=True, color="1B5E20")
 
-thin_border = Border(
-    left=Side(style='thin', color='D9D9D9'),
-    right=Side(style='thin', color='D9D9D9'),
-    top=Side(style='thin', color='D9D9D9'),
-    bottom=Side(style='thin', color='D9D9D9')
-)
+fill_title = PatternFill(start_color=NAVY_HEADER, end_color=NAVY_HEADER, fill_type="solid")
+fill_input = PatternFill(start_color=INPUT_YELLOW, end_color=INPUT_YELLOW, fill_type="solid")
+fill_tree = PatternFill(start_color=LIGHT_GREEN_BG, end_color=LIGHT_GREEN_BG, fill_type="solid")
 
-# 3. العنوان الرئيسي
-ws["B2"] = "🌱 Eco-Drive: CO2 & Tree Equivalent Calculator"
-ws["B2"].font = font_title
+thin_side = Side(style='thin', color=BORDER_COLOR)
+thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
 
-# 4. قسم المدخلات (Section 1)
+# 3. Header Title Banner
+ws.merge_cells("B2:C2")
+title_cell = ws["B2"]
+title_cell.value = "🌱 Eco-Safe Driving & Tree Equivalent Calculator"
+title_cell.font = font_title
+title_cell.fill = fill_title
+title_cell.alignment = Alignment(horizontal="center", vertical="center")
+ws.row_dimensions[2].height = 40
+
+# 4. Inputs Section
 ws["B4"] = "1. Driver Activity Inputs"
 ws["B4"].font = font_section
 
@@ -42,20 +49,20 @@ ws["C6"] = "Aggressive"
 ws["B7"] = "Daily Idle Time with Engine ON (mins):"
 ws["C7"] = 20
 
-# تنسيق خلايا المدخلات
 for row in range(5, 8):
+    ws[f"B{row}"].font = font_bold
     cell = ws[f"C{row}"]
     cell.fill = fill_input
     cell.border = thin_border
     cell.alignment = Alignment(horizontal="center")
 
-# إضافة القائمة المنسدلة لأسلوب القيادة (Dropdown)
+# Dropdown Menu for Driving Style
 dv = DataValidation(type="list", formula1='"Smooth,Aggressive"', allow_blank=False)
 ws.add_data_validation(dv)
 dv.add(ws["C6"])
 
-# 5. قسم النتائج والمكافئ البيئي للأشجار (Section 2)
-ws["B10"] = "2. Carbon Savings & Tree Equivalent Impact"
+# 5. Environmental & Tree Results Section
+ws["B10"] = "2. Carbon Savings & Environmental Impact Results"
 ws["B10"].font = font_section
 
 ws["B11"] = "Annual Fuel Burned (Liters/Year):"
@@ -67,20 +74,19 @@ ws["C12"] = '=C11 * 2.31'
 ws["B13"] = "Annual CO2 Avoided via Eco-Driving (kg CO2):"
 ws["C13"] = '=C12 * 0.20'
 
-# معادلة الأشجار (كل شجرة تمتص ~20 كجم CO2 سنوياً)
+# Key Tree Conversion Metric (1 mature tree absorbs ~20 kg CO2 / year)
 ws["B15"] = "🌲 EQUIVALENT TREES SAVED (Trees/Year):"
 ws["C15"] = '=ROUND(C13 / 20, 0)'
 
 ws["B17"] = "Safety & Sustainability Statement:"
 ws["C17"] = '=IF(C6="Aggressive", "⚠️ Shifting to Smooth Driving saves CO2 equivalent to planting the trees listed above!", "✅ Excellent! Your eco-safe style actively saves trees and cuts fuel waste.")'
 
-# تنسيق عرض النتائج
 for row in [11, 12, 13]:
     ws[f"B{row}"].font = font_bold
     ws[f"C{row}"].font = font_bold
     ws[f"C{row}"].number_format = '#,##0'
 
-# إبراز مؤشر الأشجار (KPI Highlight)
+# Highlight Tree Metric
 ws["B15"].font = font_tree_kpi
 ws["C15"].font = font_tree_kpi
 ws["B15"].fill = fill_tree
@@ -88,20 +94,20 @@ ws["C15"].fill = fill_tree
 ws["B15"].border = thin_border
 ws["C15"].border = thin_border
 
-# أبعاد الأعمدة
-ws.column_dimensions['B'].width = 45
-ws.column_dimensions['C'].width = 75
+# Column Sizing
+ws.column_dimensions['B'].width = 46
+ws.column_dimensions['C'].width = 80
 
-# 6. قفل المعادلات وتحديد الخلايا المسموح بتعديلها فقط (C5, C6, C7)
+# 6. Sheet Protection & Editable Field Unlock (C5:C7)
 ws.protection.sheet = True
 ws.protection.password = "Safety2026"
 
 for row in range(5, 8):
     ws[f"C{row}"].protection = openpyxl.styles.Protection(locked=False)
 
-# 7. حفظ الملف مباشرة على سطح المكتب
+# 7. Save Workbook
 desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
 file_path = os.path.join(desktop_path, "Eco_Tree_Savings_Calculator.xlsx")
-
 wb.save(file_path)
-print(f"Success! Excel file created on Desktop: {file_path}")
+
+print(f"Success! Excel calculator generated at: {file_path}")
