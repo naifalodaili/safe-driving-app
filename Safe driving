@@ -1,1 +1,107 @@
+import os
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.worksheet.datavalidation import DataValidation
 
+# 1. إنشاء ملف إكسل جديد
+wb = openpyxl.Workbook()
+ws = wb.active
+ws.title = "Tree Savings Calculator"
+ws.views.sheetView[0].showGridLines = True
+
+# 2. التنسيقات والأنماط (Styles)
+font_title = Font(name="Calibri", size=16, bold=True, color="006100")
+font_section = Font(name="Calibri", size=12, bold=True, color="000000")
+font_bold = Font(name="Calibri", size=11, bold=True)
+font_tree_kpi = Font(name="Calibri", size=13, bold=True, color="004D40")
+
+fill_input = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid") # أصفر فاتح للمدخلات
+fill_tree = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # أخضر فاتح لمؤشر الأشجار
+
+thin_border = Border(
+    left=Side(style='thin', color='D9D9D9'),
+    right=Side(style='thin', color='D9D9D9'),
+    top=Side(style='thin', color='D9D9D9'),
+    bottom=Side(style='thin', color='D9D9D9')
+)
+
+# 3. العنوان الرئيسي
+ws["B2"] = "🌱 Eco-Drive: CO2 & Tree Equivalent Calculator"
+ws["B2"].font = font_title
+
+# 4. قسم المدخلات (Section 1)
+ws["B4"] = "1. Driver Activity Inputs"
+ws["B4"].font = font_section
+
+ws["B5"] = "Daily Commute / Travel Distance (km):"
+ws["C5"] = 50
+
+ws["B6"] = "Driving Style (Smooth / Aggressive):"
+ws["C6"] = "Aggressive"
+
+ws["B7"] = "Daily Idle Time with Engine ON (mins):"
+ws["C7"] = 20
+
+# تنسيق خلايا المدخلات
+for row in range(5, 8):
+    cell = ws[f"C{row}"]
+    cell.fill = fill_input
+    cell.border = thin_border
+    cell.alignment = Alignment(horizontal="center")
+
+# إضافة القائمة المنسدلة لأسلوب القيادة (Dropdown)
+dv = DataValidation(type="list", formula1='"Smooth,Aggressive"', allow_blank=False)
+ws.add_data_validation(dv)
+dv.add(ws["C6"])
+
+# 5. قسم النتائج والمكافئ البيئي للأشجار (Section 2)
+ws["B10"] = "2. Carbon Savings & Tree Equivalent Impact"
+ws["B10"].font = font_section
+
+ws["B11"] = "Annual Fuel Burned (Liters/Year):"
+ws["C11"] = '=IF(C6="Aggressive", (C5*365/100)*11.25 + (C7/60)*0.6*365, (C5*365/100)*9 + (C7/60)*0.6*365)'
+
+ws["B12"] = "Baseline Carbon Footprint (kg CO2/Year):"
+ws["C12"] = '=C11 * 2.31'
+
+ws["B13"] = "Annual CO2 Avoided via Eco-Driving (kg CO2):"
+ws["C13"] = '=C12 * 0.20'
+
+# معادلة الأشجار (كل شجرة تمتص ~20 كجم CO2 سنوياً)
+ws["B15"] = "🌲 EQUIVALENT TREES SAVED (Trees/Year):"
+ws["C15"] = '=ROUND(C13 / 20, 0)'
+
+ws["B17"] = "Safety & Sustainability Statement:"
+ws["C17"] = '=IF(C6="Aggressive", "⚠️ Shifting to Smooth Driving saves CO2 equivalent to planting the trees listed above!", "✅ Excellent! Your eco-safe style actively saves trees and cuts fuel waste.")'
+
+# تنسيق عرض النتائج
+for row in [11, 12, 13]:
+    ws[f"B{row}"].font = font_bold
+    ws[f"C{row}"].font = font_bold
+    ws[f"C{row}"].number_format = '#,##0'
+
+# إبراز مؤشر الأشجار (KPI Highlight)
+ws["B15"].font = font_tree_kpi
+ws["C15"].font = font_tree_kpi
+ws["B15"].fill = fill_tree
+ws["C15"].fill = fill_tree
+ws["B15"].border = thin_border
+ws["C15"].border = thin_border
+
+# أبعاد الأعمدة
+ws.column_dimensions['B'].width = 45
+ws.column_dimensions['C'].width = 75
+
+# 6. قفل المعادلات وتحديد الخلايا المسموح بتعديلها فقط (C5, C6, C7)
+ws.protection.sheet = True
+ws.protection.password = "Safety2026"
+
+for row in range(5, 8):
+    ws[f"C{row}"].protection = openpyxl.styles.Protection(locked=False)
+
+# 7. حفظ الملف مباشرة على سطح المكتب
+desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+file_path = os.path.join(desktop_path, "Eco_Tree_Savings_Calculator.xlsx")
+
+wb.save(file_path)
+print(f"Success! Excel file created on Desktop: {file_path}")
